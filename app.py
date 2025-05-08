@@ -1,7 +1,7 @@
 import streamlit as st 
 import joblib
 import numpy as np
-from datetime import datetime
+
 
 # Load model and scaler
 model = joblib.load("xgb_model.pkl")
@@ -71,5 +71,4 @@ if st.button("Predict"):
         "BMI": bmi,
         "Smoking Status": smoking_status,
         "Prediction": "At risk" if prediction == 1 else "Not at risk",
-        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
