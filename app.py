@@ -1,21 +1,11 @@
 import streamlit as st 
 import joblib
 import numpy as np
-import pyodbc
 from datetime import datetime
 
 # Load model and scaler
 model = joblib.load("xgb_model.pkl")
 scaler = joblib.load("scaler.pkl")
-
-# SQL Server connection
-conn = pyodbc.connect(
-    'DRIVER={ODBC Driver 17 for SQL Server};'
-    'SERVER=.;'
-    'DATABASE=Stroke;'
-    'Trusted_Connection=yes;'
-)
-cursor = conn.cursor()
 
 st.title("Stroke Prediction App")
 st.write("Enter the following information to predict the risk of stroke:")
@@ -57,41 +47,29 @@ input_data = np.array([[
 # Scale input
 input_scaled = scaler.transform(input_data)
 
-# Predict & Save to SQL
+# Predict
 if st.button("Predict"):
     prediction = model.predict(input_scaled)[0]
-    result = "At risk" if prediction == 1 else "Not at risk"
-
+    
     # Show result
     if prediction == 1:
         st.error("⚠️ The person is at risk of stroke.")
     else:
         st.success("✅ The person is not at risk of stroke currently.")
-
-    prediction_time = datetime.now()
-
-    # Insert into SQL Server (make sure your table has 'prediction_time' column)
-    insert_query = """
-    INSERT INTO StrokePredictions (
-        gender, age, hypertension, heart_disease, ever_married, work_type, 
-        residence_type, avg_glucose_level, bmi, smoking_status, prediction, prediction_time
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
-    values = (
-        gender_map[gender],
-        age,
-        hypertension_map[hypertension],
-        heart_map[heart_disease],
-        married_map[ever_married],
-        work_map[work_type],
-        residence_map[residence_type],
-        avg_glucose_level,
-        bmi,
-        smoke_map.get(smoking_status, -1),
-        result,
-        prediction_time
-    )
-    cursor.execute(insert_query, values)
-    conn.commit()
-    cursor.close()
-    conn.close()
+    
+    # Optional: Display input data for verification
+    st.write("### Input Summary:")
+    st.json({
+        "Gender": gender,
+        "Age": age,
+        "Hypertension": hypertension,
+        "Heart Disease": heart_disease,
+        "Ever Married": ever_married,
+        "Work Type": work_type,
+        "Residence Type": residence_type,
+        "Average Glucose Level": avg_glucose_level,
+        "BMI": bmi,
+        "Smoking Status": smoking_status,
+        "Prediction": "At risk" if prediction == 1 else "Not at risk",
+        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
